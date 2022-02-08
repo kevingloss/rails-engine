@@ -27,6 +27,15 @@ RSpec.describe 'Items API', type: :request do
 
     expect(json_data.first[:attributes]).to have_key(:name)
     expect(json_data.first[:attributes][:name]).to be_a(String)
+
+    expect(json_data.first[:attributes]).to have_key(:description)
+    expect(json_data.first[:attributes][:description]).to be_a(String)
+    
+    expect(json_data.first[:attributes]).to have_key(:unit_price)
+    expect(json_data.first[:attributes][:unit_price]).to be_a(Float)
+    
+    expect(json_data.first[:attributes]).to have_key(:merchant_id)
+    expect(json_data.first[:attributes][:merchant_id]).to be_a(Integer)
   end
 
   it 'sends an empty hash if there are no items' do 
