@@ -33,7 +33,7 @@ RSpec.describe 'Items API', type: :request do
     
     expect(json_data.first[:attributes]).to have_key(:unit_price)
     expect(json_data.first[:attributes][:unit_price]).to be_a(Float)
-    
+
     expect(json_data.first[:attributes]).to have_key(:merchant_id)
     expect(json_data.first[:attributes][:merchant_id]).to be_a(Integer)
   end
@@ -62,5 +62,50 @@ RSpec.describe 'Items API', type: :request do
     expect(json).to be_a(Hash)
     expect(json_data).to be_a(Array) 
     expect(json_data.size).to eq(1)
+  end
+
+  it 'sends a single item' do 
+    items = create_list(:item, 10)
+
+    get api_v1_item_path(items.last)
+
+    json = parse_json
+    json_data = json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json.size).to eq(1)
+   
+    expect(json_data).to have_key(:id)
+    expect(json_data[:id]).to be_a(String)
+
+    expect(json_data).to have_key(:type)
+    expect(json_data[:type]).to eq('item')
+
+    expect(json_data).to have_key(:attributes)
+    expect(json_data[:attributes]).to be_a(Hash)
+
+    expect(json_data[:attributes]).to have_key(:name)
+    expect(json_data[:attributes][:name]).to be_a(String)
+
+    expect(json_data[:attributes]).to have_key(:description)
+    expect(json_data[:attributes][:description]).to be_a(String)
+    
+    expect(json_data[:attributes]).to have_key(:unit_price)
+    expect(json_data[:attributes][:unit_price]).to be_a(Float)
+
+    expect(json_data[:attributes]).to have_key(:merchant_id)
+    expect(json_data[:attributes][:merchant_id]).to be_a(Integer)
+  end
+
+  it 'does not find the item' do 
+    items = create_list(:item, 10)
+
+    get api_v1_item_path(0)
+
+    json = parse_json
+    json_data = json[:data]
+
+    expect(response.status).to eq(404)
+    expect(json[:message]).to eq("Couldn't find Item with 'id'=0")
   end
 end
