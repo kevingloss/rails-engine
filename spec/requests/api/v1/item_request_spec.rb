@@ -108,4 +108,48 @@ RSpec.describe 'Items API', type: :request do
     expect(response.status).to eq(404)
     expect(json[:message]).to eq("Couldn't find Item with 'id'=0")
   end
+
+  it 'successfully creates an item' do 
+    merchant = create(:merchant)
+    
+    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant.id} 
+
+    post api_v1_items_path, params: params
+
+    new_item = Item.last
+
+    expect(response.status).to eq(201)
+    expect(new_item.name).to eq(params[:name])
+    expect(new_item.description).to eq(params[:description])
+    expect(new_item.unit_price).to eq(params[:unit_price])
+    expect(new_item.merchant_id).to eq(params[:merchant_id])
+  end
+
+  it 'does not have any params to create the item' do 
+    params = {} 
+
+    post api_v1_items_path, params: params
+    json = parse_json
+
+    expect(response.status).to eq(422)
+    expect(json[:merchant]).to eq(["must exist"])
+    expect(json[:name]).to eq(["can't be blank"])
+    expect(json[:description]).to eq(["can't be blank"])
+    expect(json[:unit_price]).to eq(["can't be blank", 'is not a number'])
+    expect(json[:merchant_id]).to eq(['is not a number'])
+  end
+
+  it 'only has some params to create the item' do 
+    merchant = create(:merchant)
+    
+    params = {unit_price: 7.99, merchant_id: merchant.id} 
+
+    post api_v1_items_path, params: params
+    
+    json = parse_json
+
+    expect(response.status).to eq(422)
+    expect(json[:name]).to eq(["can't be blank"])
+    expect(json[:description]).to eq(["can't be blank"])
+  end
 end
