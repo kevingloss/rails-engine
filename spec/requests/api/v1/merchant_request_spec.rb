@@ -18,9 +18,9 @@ RSpec.describe 'Merchants API', type: :request do
 
     expect(json_data.first).to have_key(:id)
     expect(json_data.first[:id]).to be_a(String)
-
+    
     expect(json_data.first).to have_key(:type)
-    expect(json_data.first[:type]).to be_a('merchant')
+    expect(json_data.first[:type]).to eq('merchant')
 
     expect(json_data.first).to have_key(:attributes)
     expect(json_data.first[:attributes]).to be_a(Hash)
