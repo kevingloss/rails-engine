@@ -34,6 +34,7 @@ group :development, :test do
   gem 'rspec-rails'
   gem 'shoulda-matchers'
   gem 'jsonapi-serializer'
+  gem 'pry'
 end
 
 group :development do
