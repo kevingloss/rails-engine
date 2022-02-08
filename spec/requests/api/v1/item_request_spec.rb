@@ -1,34 +1,57 @@
 require 'rails_helper'
 
 RSpec.describe 'Items API', type: :request do 
-  let!(:items) { create_list(:item, 10) }
-  let(:item_id) { items.first.id }
-
   it 'sends a list of items' do
+    items = create_list(:item, 10)
+
     get api_v1_items_path
 
-    body = parse_json
-    binding.pry 
+    json = parse_json
+    json_data = json[:data]
 
-    expect(response).to be_successful
-    # expect(items.count).to eq(10)
+    expect(response.status).to eq(200)
+    expect(json_data.size).to eq(10)
 
-      # expect(book).to have_key(:id)
-      # expect(book[:id]).to be_an(Integer)
+    expect(json).to be_a(Hash)
+    expect(json_data).to be_a(Array)
+    expect(json_data.first).to be_a(Hash)
 
-      # expect(book).to have_key(:title)
-      # expect(book[:title]).to be_a(String)
+    expect(json_data.first).to have_key(:id)
+    expect(json_data.first[:id]).to be_a(String)
 
-      # expect(book).to have_key(:author)
-      # expect(book[:author]).to be_a(String)
+    expect(json_data.first).to have_key(:type)
+    expect(json_data.first[:type]).to eq('item')
 
-      # expect(book).to have_key(:genre)
-      # expect(book[:genre]).to be_a(String)
+    expect(json_data.first).to have_key(:attributes)
+    expect(json_data.first[:attributes]).to be_a(Hash)
 
-      # expect(book).to have_key(:summary)
-      # expect(book[:summary]).to be_a(String)
+    expect(json_data.first[:attributes]).to have_key(:name)
+    expect(json_data.first[:attributes][:name]).to be_a(String)
+  end
 
-      # expect(book).to have_key(:number_sold)
-      # expect(book[:number_sold]).to be_an(Integer)
+  it 'sends an empty hash if there are no items' do 
+    get api_v1_items_path
+
+    json = parse_json
+    json_data = json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json).to be_a(Hash)
+    expect(json_data).to be_a(Array) 
+    expect(json_data).to eq([])
+  end
+
+  it 'sends a hash if there is only one item' do 
+    create(:item)
+
+    get api_v1_items_path
+
+    json = parse_json
+    json_data = json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json).to be_a(Hash)
+    expect(json_data).to be_a(Array) 
+    expect(json_data.size).to eq(1)
   end
 end
