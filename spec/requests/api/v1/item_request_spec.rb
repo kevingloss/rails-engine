@@ -125,6 +125,22 @@ RSpec.describe 'Items API', type: :request do
     expect(new_item.merchant_id).to eq(params[:merchant_id])
   end
 
+  it 'successfully creates an item when given extra params' do 
+    merchant = create(:merchant)
+    
+    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant.id, buyer: 'Joey'} 
+
+    post api_v1_items_path, params: params
+
+    new_item = Item.last
+
+    expect(response.status).to eq(201)
+    expect(new_item.name).to eq(params[:name])
+    expect(new_item.description).to eq(params[:description])
+    expect(new_item.unit_price).to eq(params[:unit_price])
+    expect(new_item.merchant_id).to eq(params[:merchant_id])
+  end
+
   it 'does not have any params to create the item' do 
     params = {} 
 
@@ -145,7 +161,7 @@ RSpec.describe 'Items API', type: :request do
     params = {unit_price: 7.99, merchant_id: merchant.id} 
 
     post api_v1_items_path, params: params
-    
+
     json = parse_json
 
     expect(response.status).to eq(422)
