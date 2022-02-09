@@ -19,6 +19,12 @@ class Api::V1::ItemsController < ApplicationController
     end
   end
 
+  def update 
+    @item.update(item_params)
+    
+    json_response(ItemSerializer.new(@item), :no_content)
+  end
+
   def destroy 
     @item.destroy
   end
