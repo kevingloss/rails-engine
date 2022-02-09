@@ -13,25 +13,27 @@ class Api::V1::ItemsController < ApplicationController
     item = Item.new(item_params)
 
     if item.save
-    json_response(ItemSerializer.new(item), :created)
+      json_response(ItemSerializer.new(item), :created)
     else 
       render json: item.errors, status: :unprocessable_entity
     end
   end
 
-  def update 
-    @item.update(item_params)
-    
-    json_response(ItemSerializer.new(@item), :no_content)
+  def update
+    if @item.update!(item_params)
+      json_response(ItemSerializer.new(@item))
+    else 
+      render json: @item.errors, status: :not_found
+    end
   end
-
+  
   def destroy 
     @item.destroy
   end
 
   private
     def item_params
-      params.permit(:name, :description, :unit_price, :merchant_id)
+      params.require(:item).permit(:name, :description, :unit_price, :merchant_id)
     end
 
     def set_item
