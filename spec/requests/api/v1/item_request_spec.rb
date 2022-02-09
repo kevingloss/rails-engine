@@ -180,4 +180,70 @@ RSpec.describe 'Items API', type: :request do
     expect(Item.count).to eq(0)
     expect{Item.find(item.id)}.to raise_error(ActiveRecord::RecordNotFound)
   end
+
+  it 'can update an item' do 
+    merchant = create(:merchant)
+    merchant_2 = create(:merchant)
+    item = create(:item, merchant: merchant)
+    
+    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant_2.id} 
+
+    patch api_v1_item_path(item.id), params: params
+
+    updated_item = Item.find(item.id)
+    
+    expect(response.status).to eq(204)
+    expect(updated_item.name).to eq(params[:name])
+    expect(updated_item.description).to eq(params[:description])
+    expect(updated_item.unit_price).to eq(params[:unit_price])
+    expect(updated_item.merchant_id).to eq(params[:merchant_id])
+  end
+
+  it 'can update an item with extra params' do 
+    merchant = create(:merchant)
+    merchant_2 = create(:merchant)
+    item = create(:item, merchant: merchant)
+    
+    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant_2.id, buyer: 'Joey'} 
+
+    patch api_v1_item_path(item.id), params: params
+
+    updated_item = Item.find(item.id)
+
+    expect(response.status).to eq(204)
+    expect(updated_item.name).to eq(params[:name])
+    expect(updated_item.description).to eq(params[:description])
+    expect(updated_item.unit_price).to eq(params[:unit_price])
+    expect(updated_item.merchant_id).to eq(params[:merchant_id])
+  end
+
+  it 'can update an item with partial params' do 
+    merchant = create(:merchant)
+    merchant_2 = create(:merchant)
+    item = create(:item, merchant: merchant)
+    
+    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant_2.id} 
+
+    patch api_v1_item_path(item.id), params: params
+
+    updated_item = Item.find(item.id)
+
+    expect(response.status).to eq(204)
+    expect(updated_item.name).to eq(params[:name])
+    expect(updated_item.description).to eq(params[:description])
+    expect(updated_item.unit_price).to eq(params[:unit_price])
+    expect(updated_item.merchant_id).to eq(params[:merchant_id])
+  end
+
+  it 'cannot update when the item does not exist' do 
+    merchant = create(:merchant)
+    merchant_2 = create(:merchant)
+    item = create(:item, merchant: merchant)
+    
+    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant_2.id} 
+
+    patch api_v1_item_path(0), params: params
+
+    expect(response.status).to eq(404)
+  end
 end
