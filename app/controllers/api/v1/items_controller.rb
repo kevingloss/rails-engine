@@ -9,6 +9,16 @@ class Api::V1::ItemsController < ApplicationController
     json_response(ItemSerializer.new(@item))
   end
 
+  def create 
+    item = Item.new(item_params)
+
+    if item.save
+    json_response(ItemSerializer.new(item), :created)
+    else 
+      render json: item.errors, status: :unprocessable_entity
+    end
+  end
+
   private
     def item_params
       params.permit(:name, :description, :unit_price, :merchant_id)
