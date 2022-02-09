@@ -71,7 +71,7 @@ RSpec.describe 'Items API', type: :request do
 
     json = parse_json
     json_data = json[:data]
-
+    
     expect(response.status).to eq(200)
     expect(json.size).to eq(1)
    
@@ -112,9 +112,10 @@ RSpec.describe 'Items API', type: :request do
   it 'successfully creates an item' do 
     merchant = create(:merchant)
     
-    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant.id} 
+    params = { name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant.id}  
+    headers = { 'CONTENT_TYPE' => 'application/json' }
 
-    post api_v1_items_path, params: params
+    post api_v1_items_path, headers: headers, params: JSON.generate(item: params)
 
     new_item = Item.last
 
@@ -128,9 +129,10 @@ RSpec.describe 'Items API', type: :request do
   it 'successfully creates an item when given extra params' do 
     merchant = create(:merchant)
     
-    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant.id, buyer: 'Joey'} 
-
-    post api_v1_items_path, params: params
+    params = { name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant.id, buyer: 'Joey' } 
+    headers = {'CONTENT_TYPE' => 'application/json'}
+    
+    post api_v1_items_path, headers: headers, params: JSON.generate(item: params)
 
     new_item = Item.last
 
@@ -143,27 +145,26 @@ RSpec.describe 'Items API', type: :request do
 
   it 'does not have any params to create the item' do 
     params = {} 
+    headers = { 'CONTENT_TYPE' => 'application/json' }
+    
+    post api_v1_items_path, headers: headers, params: JSON.generate(item: params)
 
-    post api_v1_items_path, params: params
     json = parse_json
 
     expect(response.status).to eq(422)
-    expect(json[:merchant]).to eq(["must exist"])
-    expect(json[:name]).to eq(["can't be blank"])
-    expect(json[:description]).to eq(["can't be blank"])
-    expect(json[:unit_price]).to eq(["can't be blank", 'is not a number'])
-    expect(json[:merchant_id]).to eq(['is not a number'])
+    expect(json[:errors]).to eq("param is missing or the value is empty: item")
   end
 
   it 'only has some params to create the item' do 
     merchant = create(:merchant)
     
     params = {unit_price: 7.99, merchant_id: merchant.id} 
-
-    post api_v1_items_path, params: params
+    headers = { 'CONTENT_TYPE' => 'application/json' }
+    
+    post api_v1_items_path, headers: headers, params: JSON.generate(item: params)
 
     json = parse_json
-
+    # binding.pry
     expect(response.status).to eq(422)
     expect(json[:name]).to eq(["can't be blank"])
     expect(json[:description]).to eq(["can't be blank"])
@@ -179,5 +180,86 @@ RSpec.describe 'Items API', type: :request do
     expect(response.status).to eq(204)
     expect(Item.count).to eq(0)
     expect{Item.find(item.id)}.to raise_error(ActiveRecord::RecordNotFound)
+  end
+
+  it 'can update an item' do 
+    merchant = create(:merchant)
+    merchant_2 = create(:merchant)
+    item = create(:item, merchant: merchant)
+    
+    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant_2.id} 
+    headers = { 'CONTENT_TYPE' => 'application/json' }
+    
+    patch api_v1_item_path(item.id), headers: headers, params: JSON.generate(item: params)
+
+    updated_item = Item.find(item.id)
+    
+    expect(response.status).to eq(200)
+    expect(updated_item.name).to eq(params[:name])
+    expect(updated_item.description).to eq(params[:description])
+    expect(updated_item.unit_price).to eq(params[:unit_price])
+    expect(updated_item.merchant_id).to eq(params[:merchant_id])
+  end
+
+  it 'can update an item with extra params' do 
+    merchant = create(:merchant)
+    merchant_2 = create(:merchant)
+    item = create(:item, merchant: merchant)
+    
+    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant_2.id, buyer: 'Joey'} 
+    headers = { 'CONTENT_TYPE' => 'application/json' }
+    
+    patch api_v1_item_path(item.id), headers: headers, params: JSON.generate(item: params)
+
+    updated_item = Item.find(item.id)
+
+    expect(response.status).to eq(200)
+    expect(updated_item.name).to eq(params[:name])
+    expect(updated_item.description).to eq(params[:description])
+    expect(updated_item.unit_price).to eq(params[:unit_price])
+    expect(updated_item.merchant_id).to eq(params[:merchant_id])
+  end
+
+  it 'can update an item with partial params' do 
+    merchant = create(:merchant)
+    merchant_2 = create(:merchant)
+    item = create(:item, merchant: merchant)
+    
+    params = {name: "Burger", unit_price: 7.99, merchant_id: merchant_2.id} 
+    headers = { 'CONTENT_TYPE' => 'application/json' }
+    
+    patch api_v1_item_path(item.id), headers: headers, params: JSON.generate(item: params)
+
+    updated_item = Item.find(item.id)
+
+    expect(response.status).to eq(200)
+    expect(updated_item.name).to eq(params[:name])
+    expect(updated_item.description).to eq(item[:description])
+    expect(updated_item.unit_price).to eq(params[:unit_price])
+    expect(updated_item.merchant_id).to eq(params[:merchant_id])
+  end
+
+  it 'cannot update when the item does not exist' do 
+    merchant = create(:merchant)
+    
+    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: merchant.id} 
+    headers = { 'CONTENT_TYPE' => 'application/json' }
+    
+    patch api_v1_item_path(0), headers: headers, params: JSON.generate(item: params)
+
+    expect(response.status).to eq(404)
+  end
+
+  it 'cannot update when the new merchant does not exist' do 
+    merchant = create(:merchant)
+    merchant_2 = create(:merchant)
+    item = create(:item, merchant: merchant)
+    
+    params = {name: "Burger", description: "Food", unit_price: 7.99, merchant_id: 0} 
+    headers = { 'CONTENT_TYPE' => 'application/json' }
+    
+    patch api_v1_item_path(item.id), headers: headers, params: JSON.generate(item: params)
+
+    expect(response.status).to eq(404)
   end
 end
