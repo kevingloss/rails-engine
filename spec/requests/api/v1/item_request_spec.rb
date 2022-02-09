@@ -168,4 +168,16 @@ RSpec.describe 'Items API', type: :request do
     expect(json[:name]).to eq(["can't be blank"])
     expect(json[:description]).to eq(["can't be blank"])
   end
+
+  it "can destroy an item" do
+    item = create(:item)
+
+    expect(Item.count).to eq(1)
+
+    delete api_v1_item_path(item.id)
+
+    expect(response.status).to eq(204)
+    expect(Item.count).to eq(0)
+    expect{Item.find(item.id)}.to raise_error(ActiveRecord::RecordNotFound)
+  end
 end
