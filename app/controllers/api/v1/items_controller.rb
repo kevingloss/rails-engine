@@ -20,11 +20,8 @@ class Api::V1::ItemsController < ApplicationController
   end
 
   def update
-    if @item.update!(item_params)
-      json_response(ItemSerializer.new(@item))
-    else 
-      render json: @item.errors, status: :not_found
-    end
+    @item.update!(item_params)
+    json_response(ItemSerializer.new(@item))
   end
   
   def destroy 
