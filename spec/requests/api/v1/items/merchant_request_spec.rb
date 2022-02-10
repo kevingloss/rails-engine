@@ -15,7 +15,7 @@ RSpec.describe "Item's merchant API", type: :request do
       expect(json).to be_a(Hash)
       expect(response.status).to eq(200)
       expect(json_data).to be_a(Hash)
-      expect(json_data[:id].to_i).to eq(merchants.first[:id])
+      expect(json_data[:id]).to eq(merchants.first[:id].to_s)
       expect(json_data[:attributes][:name]).to eq(merchants.first[:name])
     end
     
