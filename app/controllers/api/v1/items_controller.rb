@@ -25,6 +25,7 @@ class Api::V1::ItemsController < ApplicationController
   end
   
   def destroy 
+    @item.destroy_relevent_invoices
     @item.destroy
   end
 
