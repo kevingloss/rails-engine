@@ -179,11 +179,40 @@ RSpec.describe 'Items API', type: :request do
 
     expect(Item.count).to eq(1)
 
-    delete api_v1_item_path(item.id)
+    delete api_v1_item_path(item)
 
     expect(response.status).to eq(204)
     expect(Item.count).to eq(0)
     expect{Item.find(item.id)}.to raise_error(ActiveRecord::RecordNotFound)
+  end
+
+  it "destroys any invoices with no remaining items" do
+    item_1 = create(:item)
+    item_2 = create(:item)
+    item_3 = create(:item)
+    invoice_1 = Invoice.create!
+    invoice_2 = Invoice.create!
+    ii_1 = InvoiceItem.create!(invoice: invoice_1, item: item_1)
+    ii_2 = InvoiceItem.create!(invoice: invoice_2, item: item_2)
+    ii_3 = InvoiceItem.create!(invoice: invoice_2, item: item_3)
+
+    expect(Invoice.count).to eq(2)
+    expect(InvoiceItem.count).to eq(3)
+    expect(Item.count).to eq(3)
+
+    delete api_v1_item_path(item_1)
+
+    expect(Item.all).to eq([item_2, item_3])
+    expect(Invoice.count).to eq(1)
+    expect(InvoiceItem.count).to eq(2)
+    expect(Item.count).to eq(2)
+
+    delete api_v1_item_path(item_2)
+
+    expect(Item.first).to eq(item_3)
+    expect(Invoice.count).to eq(1)
+    expect(InvoiceItem.count).to eq(1)
+    expect(Item.count).to eq(1)
   end
 
   # Test updating an item
