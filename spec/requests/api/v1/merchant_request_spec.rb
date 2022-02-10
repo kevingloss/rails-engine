@@ -1,6 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Merchants API', type: :request do 
+  # Test merchant index
   it 'sends a list of merchants' do
     merchants = create_list(:merchant, 10)
 
@@ -53,6 +54,7 @@ RSpec.describe 'Merchants API', type: :request do
     expect(json_data.size).to eq(1)
   end
 
+  # Test merchant show page
   it 'sends a single merchant' do 
     merchants = create_list(:merchant, 10)
 
@@ -89,6 +91,7 @@ RSpec.describe 'Merchants API', type: :request do
     expect(json[:message]).to eq("Couldn't find Merchant with 'id'=0")
   end
 
+  # Test search for a merchant with name param
   it 'can search for a merchant' do 
     create_list(:merchant, 100)
     create(:merchant, name: 'AAB & Sons')
@@ -117,7 +120,22 @@ RSpec.describe 'Merchants API', type: :request do
     expect(json_data).to eq({})
   end
 
-  it 'find merchant with no search params' do
+  it 'can find a name with a number' do
+    create_list(:merchant, 10, name: "Bob's")
+    merchant = create(:merchant, name: '9 dogs and a man')
+
+    get api_v1_merchants_find_path, params: { name: 9 }
+
+    json = parse_json
+    json_data = parse_json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json_data[:id]).to eq(merchant.id.to_s)
+    expect(json_data[:type]).to eq('merchant')
+    expect(json_data[:attributes][:name]).to eq(merchant.name)
+  end
+
+  it 'can not find merchant with no search params' do
     create_list(:merchant, 10)
 
     get api_v1_merchants_find_path
