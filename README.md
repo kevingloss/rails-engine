@@ -78,4 +78,4 @@ $ rails s
 
 ## Further Project Information
  - [Turing Project Details](https://backend.turing.edu/module3/projects/rails_engine_lite/)
- - [Further Requirements/Enpoint - requests & responses](https://backend.turing.edu/module3/projects/rails_engine_lite/requirements)
+ - [Further Requirements/Endpoint - requests & responses](https://backend.turing.edu/module3/projects/rails_engine_lite/requirements)
