@@ -1,6 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Items API', type: :request do 
+  # Tests item index
   it 'sends a list of items' do
     items = create_list(:item, 10)
 
@@ -10,7 +11,7 @@ RSpec.describe 'Items API', type: :request do
     json_data = json[:data]
 
     expect(response.status).to eq(200)
-    expect(json_data.size).to eq(10)
+    expect(json_data.count).to eq(10)
 
     expect(json).to be_a(Hash)
     expect(json_data).to be_a(Array)
@@ -64,6 +65,7 @@ RSpec.describe 'Items API', type: :request do
     expect(json_data.size).to eq(1)
   end
 
+  # Test item show page
   it 'sends a single item' do 
     items = create_list(:item, 10)
 
@@ -73,7 +75,7 @@ RSpec.describe 'Items API', type: :request do
     json_data = json[:data]
     
     expect(response.status).to eq(200)
-    expect(json.size).to eq(1)
+    expect(json.count).to eq(1)
    
     expect(json_data).to have_key(:id)
     expect(json_data[:id]).to be_a(String)
@@ -109,6 +111,7 @@ RSpec.describe 'Items API', type: :request do
     expect(json[:message]).to eq("Couldn't find Item with 'id'=0")
   end
 
+  # Test creating an item
   it 'successfully creates an item' do 
     merchant = create(:merchant)
     
@@ -170,6 +173,7 @@ RSpec.describe 'Items API', type: :request do
     expect(json[:description]).to eq(["can't be blank"])
   end
 
+  # Test destroying an item
   it "can destroy an item" do
     item = create(:item)
 
@@ -182,6 +186,7 @@ RSpec.describe 'Items API', type: :request do
     expect{Item.find(item.id)}.to raise_error(ActiveRecord::RecordNotFound)
   end
 
+  # Test updating an item
   it 'can update an item' do 
     merchant = create(:merchant)
     merchant_2 = create(:merchant)
@@ -261,5 +266,244 @@ RSpec.describe 'Items API', type: :request do
     patch api_v1_item_path(item.id), headers: headers, params: JSON.generate(item: params)
 
     expect(response.status).to eq(404)
+  end
+
+  # Test finding all items by name or price params
+  # Test errors when receive name and price params
+  it 'throws an error if passed in a name and price param' do 
+    create_list(:item, 100)
+
+    get api_v1_items_find_all_path, params: { name: 'ring', min_price: 1.00 }
+
+    json = parse_json
+
+    expect(response.status).to eq(400)
+    expect(json[:error]).to eq("Can't search by name and min or max price.")
+    
+    get api_v1_items_find_all_path, params: { name: 'ring', max_price: 1.00 }
+
+    json = parse_json
+
+    expect(response.status).to eq(400)
+    expect(json[:error]).to eq("Can't search by name and min or max price.")
+
+    get api_v1_items_find_all_path, params: { name: 'ring', min_price: 1.00, max_price: 100.00 }
+
+    json = parse_json
+
+    expect(response.status).to eq(400)
+    expect(json[:error]).to eq("Can't search by name and min or max price.")
+  end
+
+  # Test search by name fragment
+  it 'can find all items with a name fragment' do 
+    create(:item, name: 'Bull Cape')
+    create(:item, name: 'Lightsaber')
+    create(:item, name: 'Priceless Art')
+    create(:item, name: 'This thing')
+    create(:item, name: 'Pen')
+    create(:item, name: "Silver Ring")
+    create(:item, name: "Turing Books")
+    create(:item, name: "Gold Ring")
+    
+    get api_v1_items_find_all_path, params: { name: 'ring' }
+
+    json = parse_json
+    json_data = parse_json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json_data.size).to eq(3)
+
+    expect(json).to be_a(Hash)
+    expect(json_data).to be_a(Array)
+    expect(json_data.first).to be_a(Hash)
+
+    expect(json_data.first.keys).to eq([:id, :type, :attributes])
+    expect(json_data.first[:id]).to be_a(String)
+    expect(json_data.first[:type]).to eq('item')
+    expect(json_data.first[:attributes]).to be_a(Hash)
+
+    expect(json_data.first[:attributes].keys).to eq([:name, :description, :unit_price, :merchant_id])
+    expect(json_data.first[:attributes][:name]).to be_a(String)
+    expect(json_data.first[:attributes][:description]).to be_a(String)
+    expect(json_data.first[:attributes][:unit_price]).to be_a(Float)
+    expect(json_data.first[:attributes][:merchant_id]).to be_a(Integer)
+  end
+
+  it 'can find all items with number in the name' do 
+    create(:item, name: 'Bull Cape')
+    create(:item, name: 'Lightsaber')
+    create(:item, name: 'Priceless Art')
+    create(:item, name: 'This thing')
+    pencil = create(:item, name: '# 2 Pencil')
+    create(:item, name: "Silver Ring")
+    create(:item, name: "Turing Books")
+    create(:item, name: "Gold Ring")
+    
+    get api_v1_items_find_all_path, params: { name: 2 }
+
+    json = parse_json
+    json_data = parse_json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json_data.count).to eq(1)
+    expect(json_data.first[:attributes][:name]).to eq(pencil.name)
+  end
+
+  it 'does not find any names that match' do 
+    create(:item, name: 'Bull Cape')
+    create(:item, name: 'Lightsaber')
+    create(:item, name: 'Priceless Art')
+    create(:item, name: 'This thing')
+    create(:item, name: '# 2 Pencil')
+    create(:item, name: "Silver Ring")
+    create(:item, name: "Turing Books")
+    create(:item, name: "Gold Ring")
+    
+    get api_v1_items_find_all_path, params: { name: 'Zebra' }
+
+    json = parse_json
+    json_data = parse_json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json_data).to eq([])
+  end
+
+  it 'throws an error if name is blank' do 
+    create(:item, name: 'Bull Cape')
+    create(:item, name: 'Lightsaber')
+    create(:item, name: 'Priceless Art')
+    create(:item, name: 'This thing')
+    create(:item, name: 'Pen')
+    create(:item, name: "Silver Ring")
+    create(:item, name: "Turing Books")
+    create(:item, name: "Gold Ring")
+    
+    get api_v1_items_find_all_path, params: { name: '' }
+
+    json = parse_json
+
+    expect(response.status).to eq(400)
+    expect(json[:error]).to eq('Search must use a valid name string or valid min/max float price.')
+  end
+
+  it 'does not receive any params' do 
+    create(:item, name: 'Bull Cape')
+    create(:item, name: 'Lightsaber')
+    create(:item, name: 'Priceless Art')
+    create(:item, name: 'This thing')
+    create(:item, name: 'Pen')
+    create(:item, name: "Silver Ring")
+    create(:item, name: "Turing Books")
+    create(:item, name: "Gold Ring")
+    
+    get api_v1_items_find_all_path
+
+    json = parse_json
+    
+    expect(response.status).to eq(400)
+    expect(json[:error]).to eq('Search must use a valid name string or valid min/max float price.')
+  end
+
+  # Test search by min/max price params
+  it 'can find items above a min price' do
+    create(:item, name: 'Bull Cape', unit_price: 10.99)
+    create(:item, name: 'Lightsaber', unit_price: 40)
+    create(:item, name: 'Priceless Art', unit_price: 100)
+    create(:item, name: 'This thing', unit_price: 0.25)
+    create(:item, name: 'Pen', unit_price: 0.99)
+    create(:item, name: "Silver Ring", unit_price: 50)
+    create(:item, name: "Turing Books", unit_price: 15)
+    create(:item, name: "Gold Ring", unit_price: 90)
+    
+    get api_v1_items_find_all_path, params: { min_price: 50 }
+    
+    json = parse_json 
+    json_data = json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json_data).to be_a(Array)
+    expect(json_data.first[:attributes][:name]).to eq('Silver Ring')
+    expect(json_data.second[:attributes][:name]).to eq('Gold Ring')
+    expect(json_data.third[:attributes][:name]).to eq('Priceless Art')
+  end
+
+  it 'can find items below a max price' do 
+    create(:item, name: 'Bull Cape', unit_price: 10.99)
+    create(:item, name: 'Lightsaber', unit_price: 40)
+    create(:item, name: 'Priceless Art', unit_price: 100)
+    create(:item, name: 'This thing', unit_price: 0.25)
+    create(:item, name: 'Pen', unit_price: 0.99)
+    create(:item, name: "Silver Ring", unit_price: 50)
+    create(:item, name: "Turing Books", unit_price: 15)
+    create(:item, name: "Gold Ring", unit_price: 90)
+
+    get api_v1_items_find_all_path, params: { max_price: '15' }
+
+    json = parse_json 
+    json_data = json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json_data).to be_a(Array)
+    expect(json_data.first[:attributes][:name]).to eq('Turing Books')
+    expect(json_data.second[:attributes][:name]).to eq('Bull Cape')
+    expect(json_data.third[:attributes][:name]).to eq('Pen')
+    expect(json_data.fourth[:attributes][:name]).to eq('This thing')
+  end
+
+  it 'can find items between a min/max price' do 
+    create(:item, name: 'Bull Cape', unit_price: 10.99)
+    create(:item, name: 'Lightsaber', unit_price: 40)
+    create(:item, name: 'Priceless Art', unit_price: 100)
+    create(:item, name: 'This thing', unit_price: 0.25)
+    create(:item, name: 'Pen', unit_price: 0.99)
+    create(:item, name: "Silver Ring", unit_price: 50)
+    create(:item, name: "Turing Books", unit_price: 15)
+    create(:item, name: "Gold Ring", unit_price: 90)
+
+    get api_v1_items_find_all_path, params: { min_price: 0.99, max_price: 20 }
+
+    json = parse_json 
+    json_data = json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json_data).to be_a(Array)
+    expect(json_data.first[:attributes][:name]).to eq('Pen')
+    expect(json_data.second[:attributes][:name]).to eq('Bull Cape')
+    expect(json_data.third[:attributes][:name]).to eq('Turing Books')
+  end
+
+  it 'receives empty price params' do 
+    create(:item, name: 'Bull Cape', unit_price: 10.99)
+
+    get api_v1_items_find_all_path, params: { min_price: '', max_price: '' }
+
+    json = parse_json
+    json_data = parse_json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json_data).to eq([])
+  end
+
+  it 'receives price params as strings' do 
+    create(:item, name: 'Bull Cape', unit_price: 10.99)
+    create(:item, name: 'Lightsaber', unit_price: 40)
+    create(:item, name: 'Priceless Art', unit_price: 100)
+    create(:item, name: 'This thing', unit_price: 0.25)
+    create(:item, name: 'Pen', unit_price: 0.99)
+    create(:item, name: "Silver Ring", unit_price: 50)
+    create(:item, name: "Turing Books", unit_price: 15)
+    create(:item, name: "Gold Ring", unit_price: 90)
+
+    get api_v1_items_find_all_path, params: { min_price: '0.99', max_price: '20' }
+
+    json = parse_json 
+    json_data = json[:data]
+
+    expect(response.status).to eq(200)
+    expect(json_data).to be_a(Array)
+    expect(json_data.first[:attributes][:name]).to eq('Pen')
+    expect(json_data.second[:attributes][:name]).to eq('Bull Cape')
+    expect(json_data.third[:attributes][:name]).to eq('Turing Books')
   end
 end  
