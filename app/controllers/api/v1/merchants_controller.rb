@@ -10,7 +10,7 @@ class Api::V1::MerchantsController < ApplicationController
   end
 
   def find
-    if params[:name] && params[:name] != ''
+    if params[:name].present?
       merchant = Merchant.search(params[:name])
       return json_response({data: {}}) unless merchant
       json_response(MerchantSerializer.new(merchant))
