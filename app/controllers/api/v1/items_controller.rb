@@ -28,11 +28,19 @@ class Api::V1::ItemsController < ApplicationController
     @item.destroy
   end
 
-  # def find_all(keyword) 
-  #   items = Item.search_all(keyword)
-
-  #   json_response(ItemSerializer.new(items))
-  # end
+  def find_all
+    if params[:name] && (params[:min_price] || params[:max_price])
+      render json: {error: "Can't search by name and min or max price."}, status: :bad_request
+    elsif params[:name].present?
+      items = Item.search_all_names(params[:name])
+      json_response(ItemSerializer.new(items))
+    elsif params[:min_price] || params[:max_price]
+      items = Item.search_all_by_price(min_price: params[:min_price], max_price: params[:max_price])
+      json_response(ItemSerializer.new(items))
+    else
+      render json: {error: 'Search must use a valid name string or valid min/max float price.'}, status: :bad_request
+    end
+  end
 
   private
     def item_params
