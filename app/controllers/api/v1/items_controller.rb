@@ -14,7 +14,7 @@ class Api::V1::ItemsController < ApplicationController
 
     if item.save
       json_response(ItemSerializer.new(item), :created)
-    else 
+    else
       render json: item.errors, status: :unprocessable_entity
     end
   end
@@ -27,6 +27,12 @@ class Api::V1::ItemsController < ApplicationController
   def destroy 
     @item.destroy
   end
+
+  # def find_all(keyword) 
+  #   items = Item.search_all(keyword)
+
+  #   json_response(ItemSerializer.new(items))
+  # end
 
   private
     def item_params
