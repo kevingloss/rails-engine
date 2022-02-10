@@ -12,7 +12,7 @@ class Api::V1::MerchantsController < ApplicationController
   def find
     if params[:name] && params[:name] != ''
       merchant = Merchant.search(params[:name])
-      return json_response({data: {}}) if !merchant
+      return json_response({data: {}}) unless merchant
       json_response(MerchantSerializer.new(merchant))
     else
       render json: {error: 'Name param must be valid string.'}, status: :bad_request
